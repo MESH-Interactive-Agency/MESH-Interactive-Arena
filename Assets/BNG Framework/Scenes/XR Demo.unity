@@ -78077,6 +78077,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4928621777531013208, guid: d1196da97cc726d48bb5c44c053d9cef,
         type: 3}
+      propertyPath: m_PresetInfoIsWorld
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4928621777531013208, guid: d1196da97cc726d48bb5c44c053d9cef,
+        type: 3}
       propertyPath: m_DynamicPixelsPerUnit
       value: 5
       objectReference: {fileID: 0}
@@ -93316,6 +93321,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 848579964192113886, guid: e4819389334c4504290937beeb9cd43b,
+        type: 3}
+      propertyPath: m_PresetInfoIsWorld
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 848579964656791977, guid: e4819389334c4504290937beeb9cd43b,
         type: 3}
@@ -125888,7 +125898,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 5
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!222 &2088722807
 CanvasRenderer:
   m_ObjectHideFlags: 0
