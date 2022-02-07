@@ -3821,6 +3821,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: DragonStatue_LOD0 (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 9ca7068e92429ea4084e6c106cd9c509, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 9ca7068e92429ea4084e6c106cd9c509, type: 3}
       propertyPath: m_RootOrder
       value: 15
