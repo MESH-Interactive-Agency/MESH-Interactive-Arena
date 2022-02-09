@@ -97,7 +97,8 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 0}
+  m_LightingDataAsset: {fileID: 112000000, guid: 5a9fe29598546174f88042a5046c999e,
+    type: 2}
   m_LightingSettings: {fileID: 457447030}
 --- !u!196 &4
 NavMeshSettings:
@@ -1659,6 +1660,10 @@ PrefabInstance:
     - target: {fileID: 1157313199091780, guid: d3578800f4626e741858f02956302cf2, type: 3}
       propertyPath: m_Name
       value: Rock Table (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 1157313199091780, guid: d3578800f4626e741858f02956302cf2, type: 3}
+      propertyPath: m_Layer
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 4812758031390804, guid: d3578800f4626e741858f02956302cf2, type: 3}
       propertyPath: m_RootOrder
@@ -3281,6 +3286,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Rock Table
       objectReference: {fileID: 0}
+    - target: {fileID: 1157313199091780, guid: d3578800f4626e741858f02956302cf2, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 4812758031390804, guid: d3578800f4626e741858f02956302cf2, type: 3}
       propertyPath: m_RootOrder
       value: 13
@@ -3451,6 +3460,10 @@ PrefabInstance:
     - target: {fileID: 100000, guid: 9ca7068e92429ea4084e6c106cd9c509, type: 3}
       propertyPath: m_Name
       value: DragonStatue_LOD0
+      objectReference: {fileID: 0}
+    - target: {fileID: 100000, guid: 9ca7068e92429ea4084e6c106cd9c509, type: 3}
+      propertyPath: m_Layer
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 9ca7068e92429ea4084e6c106cd9c509, type: 3}
       propertyPath: m_RootOrder
@@ -5756,7 +5769,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 100000, guid: 9ca7068e92429ea4084e6c106cd9c509, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 400000, guid: 9ca7068e92429ea4084e6c106cd9c509, type: 3}
       propertyPath: m_RootOrder

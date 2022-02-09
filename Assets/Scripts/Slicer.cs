@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
 using EzySlice;
+using System.Collections;
+using System.Collections.Generic;
+
 public class Slicer : MonoBehaviour
 {
     public Material materialAfterSlice;
@@ -36,7 +39,15 @@ public class Slicer : MonoBehaviour
     {
         obj.AddComponent<MeshCollider>().convex = true;
         obj.AddComponent<Rigidbody>();
-        obj.layer = 12;
+
+        StartCoroutine(SliceAgain(obj));
+
+        IEnumerator SliceAgain(GameObject o)
+        {  
+            yield return new WaitForSeconds(0.25f);
+            o.layer = 12;
+        }
+        
     }
 
     private SlicedHull SliceObject(GameObject obj, Material crossSectionMaterial = null)
@@ -46,3 +57,5 @@ public class Slicer : MonoBehaviour
 
 
 }
+
+
