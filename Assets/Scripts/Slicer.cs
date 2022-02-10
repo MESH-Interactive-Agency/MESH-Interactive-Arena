@@ -39,13 +39,22 @@ public class Slicer : MonoBehaviour
     {
         obj.AddComponent<MeshCollider>().convex = true;
         obj.AddComponent<Rigidbody>();
-
+        obj.GetComponent<Rigidbody>().useGravity = false;
+        
         StartCoroutine(SliceAgain(obj));
+        StartCoroutine(DestroyDebris(obj));
 
+        IEnumerator DestroyDebris(GameObject o)
+        {
+            yield return new WaitForSeconds(50.0f);
+            Destroy(o);
+
+        }
         IEnumerator SliceAgain(GameObject o)
         {  
-            yield return new WaitForSeconds(0.25f);
+            yield return new WaitForSeconds(0.5f);
             o.layer = 12;
+
         }
         
     }
