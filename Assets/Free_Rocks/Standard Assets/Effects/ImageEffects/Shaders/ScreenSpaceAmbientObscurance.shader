@@ -50,7 +50,7 @@ Shader "Hidden/ScreenSpaceAmbientObscurance"
 	float4 _ProjInfoRight;
 	float4x4 _ProjectionInv; // ref only
 
-	sampler2D_float _CameraDepthTexture;
+	UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
 	sampler2D _Rand;
 	sampler2D _AOTex;
 	sampler2D _MainTex;

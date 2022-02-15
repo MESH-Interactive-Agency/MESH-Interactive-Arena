@@ -6,7 +6,7 @@
 #define SCREEN_SPACE_RAYTRACE_INCLUDED
 
 
-sampler2D_float _CameraDepthTexture;
+UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
 
 
 float distanceSquared(float2 A, float2 B) {
