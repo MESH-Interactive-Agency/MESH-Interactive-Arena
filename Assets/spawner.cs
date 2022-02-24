@@ -25,6 +25,17 @@ public class spawner : MonoBehaviour
             GameObject cube = Instantiate(cubes[Random.Range(0, 2)], points[Random.Range(0, 4)]);
             cube.transform.localPosition = Vector3.zero;
             cube.transform.Rotate(transform.forward, 45 * Random.Range(0,8));
+            
+         
+            StartCoroutine(DestroyDebris(cube));
+
+            IEnumerator DestroyDebris(GameObject o)
+            {
+                yield return new WaitForSeconds(25.0f);
+                Destroy(o);
+
+            }
+
             timer -= beat;
         }
 

@@ -2,10 +2,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using EzySlice;
 
 public class saber : MonoBehaviour
 {
 
+
+    public Slicer slicer;
+    
     public LayerMask layer;
     private Vector3 previousPos;
 
@@ -23,10 +27,17 @@ public class saber : MonoBehaviour
         {
             if (Vector3.Angle(transform.position - previousPos, hit.transform.up) > 130)
             {
-                Destroy(hit.transform.gameObject);
+                slicer.isTouched = true;
             }
         }
+        
+        
+        
 
         previousPos = transform.position;
     }
+      
+        
+
+        
 }
