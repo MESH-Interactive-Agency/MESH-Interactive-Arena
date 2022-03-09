@@ -7,6 +7,7 @@ using EzySlice;
 public class saber : MonoBehaviour
 {
 
+    public GameObject controller;
 
     public Slicer slicer;
     
@@ -20,24 +21,32 @@ public class saber : MonoBehaviour
     }
 
     // Update is called once per frame
+
+
     void Update()
     {
         RaycastHit hit;
-        if (Physics.Raycast(transform.position, transform.forward, out hit, 1, layer))
-        {
-            if (Vector3.Angle(transform.position - previousPos, hit.transform.up) > 130)
-            {
-                slicer.isTouched = true;
-            }
-        }
-        
-        
-        
 
+            if (Physics.Raycast(transform.position, transform.forward, out hit, 1.5f, layer))
+            {
+
+                if (Vector3.Angle(transform.position - previousPos, hit.transform.up) > 45)
+                {
+                    slicer.isTouched = true;
+                    FindObjectOfType<Scoreboard>().IncreaseHits();
+
+                }
+            }
         previousPos = transform.position;
     }
-      
-        
 
-        
+
+
+    // private void OnCollisionStay(Collision collisionInfo)
+    // {
+    //
+    //         slicer.isTouched = true;
+    //     previousPos = transform.position;
+    // }
+
 }

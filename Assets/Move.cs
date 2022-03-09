@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,7 +6,7 @@ using UnityEngine;
 public class Move : MonoBehaviour
 {
     public float speed = 2;
-    
+
     // Start is called before the first frame update
     void Start()
     {
@@ -16,5 +17,12 @@ public class Move : MonoBehaviour
     void Update()
     {
         transform.position -= Time.deltaTime * transform.forward * speed;
+
+        if (transform.position.z < -2.0f)
+        {
+            FindObjectOfType<Scoreboard>().IncreaseMisses();
+            Destroy(gameObject);
+        }
+        
     }
 }

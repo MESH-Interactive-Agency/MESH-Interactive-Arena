@@ -20,19 +20,25 @@ public class spawner : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (timer > beat)
+        if (timer > beat )
         {
-            GameObject cube = Instantiate(cubes[Random.Range(0, 2)], points[Random.Range(0, 4)]);
-            cube.transform.localPosition = Vector3.zero;
-            cube.transform.Rotate(transform.forward, 45 * Random.Range(0,8));
-            
-         
-            StartCoroutine(DestroyDebris(cube));
 
-            IEnumerator DestroyDebris(GameObject o)
+            if (Random.Range(0, 4) == 1)
             {
-                yield return new WaitForSeconds(25.0f);
-                Destroy(o);
+                GameObject cube = Instantiate(cubes[Random.Range(0, 2)], points[Random.Range(0, 8)]);
+                cube.transform.localPosition = Vector3.zero;
+                cube.transform.Rotate(transform.forward, 45 * Random.Range(0, 8));
+
+
+
+                StartCoroutine(DestroyDebris(cube));
+
+                IEnumerator DestroyDebris(GameObject o)
+                {
+                    yield return new WaitForSeconds(30.0f);
+                    Destroy(o);
+
+                }
 
             }
 
