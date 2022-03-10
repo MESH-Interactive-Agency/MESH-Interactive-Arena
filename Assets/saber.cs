@@ -9,14 +9,23 @@ public class saber : MonoBehaviour
     public LayerMask layer;
     private Vector3 _previousPos;
 
-    private void OnTriggerEnter(Collider collision)
+    private void OnTriggerEnter(Collider other)
     {
-        if (collision.gameObject.layer == layer) ;
+        //if (other.gameObject.layer == layer.value) ;
+        //{
+
+        if ((layer.value & (1 << other.transform.gameObject.layer)) > 0)
         {
+            Debug.Log("hit: " + other.transform.gameObject.layer + " - actual layer:" + layer.value);
             slicer.isTouched = true;
             FindObjectOfType<Scoreboard>().IncreaseHits();
-            Destroy(collision.GetComponent<BoxCollider>());
+            Destroy(other.GetComponent<BoxCollider>());
         }
+        else
+        {
+            Debug.Log("GFY");
+        }
+
         _previousPos = transform.position;
     }
 }
