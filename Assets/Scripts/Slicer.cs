@@ -46,7 +46,7 @@ public class Slicer : MonoBehaviour
         obj.AddComponent<Rigidbody>();
         obj.GetComponent<Rigidbody>().useGravity = true;
         obj.GetComponent<Rigidbody>().velocity = Vector3.down*1.5f;
-        obj.layer = 2;
+        obj.layer = 13;
         
         //StartCoroutine(DropThrough(obj));
         StartCoroutine(DestroyDebris(obj));

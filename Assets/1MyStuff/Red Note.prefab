@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2547880133210047598}
   - component: {fileID: 2547880133210047597}
   - component: {fileID: 2547880133210047596}
-  m_Layer: 11
+  m_Layer: 13
   m_Name: Indicator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -105,6 +105,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2547880133501760449}
   - component: {fileID: -4458575236207252396}
+  - component: {fileID: 6767013586404427274}
   m_Layer: 11
   m_Name: Red Note
   m_TagString: Untagged
@@ -142,6 +143,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 2
+--- !u!65 &6767013586404427274
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2547880133501760448}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.5, y: 0.5, z: 0.5}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2547880133761507112
 GameObject:
   m_ObjectHideFlags: 0
@@ -154,7 +168,7 @@ GameObject:
   - component: {fileID: 2547880133761507116}
   - component: {fileID: 2547880133761507115}
   - component: {fileID: 2547880133761507114}
-  m_Layer: 11
+  m_Layer: 13
   m_Name: Block
   m_TagString: Untagged
   m_Icon: {fileID: 0}

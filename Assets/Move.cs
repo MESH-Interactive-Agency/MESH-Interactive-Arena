@@ -6,6 +6,8 @@ using UnityEngine;
 public class Move : MonoBehaviour
 {
     public float speed = 2;
+    private bool beenHit = false;
+
 
     // Start is called before the first frame update
     void Start()
