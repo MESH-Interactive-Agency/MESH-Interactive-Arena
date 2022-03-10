@@ -11,7 +11,6 @@ public class saber : MonoBehaviour
 
     private void OnTriggerEnter(Collider collision)
     {
-        Debug.Log(collision);
         if (collision.gameObject.layer == layer) ;
         {
             slicer.isTouched = true;
