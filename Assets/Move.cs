@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Move : MonoBehaviour
@@ -8,15 +5,7 @@ public class Move : MonoBehaviour
     public float speed = 2;
     private bool beenHit = false;
 
-
-    // Start is called before the first frame update
-    void Start()
-    {
-
-}
-
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
         transform.position -= Time.deltaTime * transform.forward * speed;
 
@@ -25,6 +14,5 @@ public class Move : MonoBehaviour
             FindObjectOfType<Scoreboard>().IncreaseMisses();
             Destroy(gameObject);
         }
-        
     }
 }

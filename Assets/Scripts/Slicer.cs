@@ -1,7 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections;
 using EzySlice;
-using System.Collections;
-using System.Collections.Generic;
+using UnityEngine;
 
 public class Slicer : MonoBehaviour
 {
@@ -9,20 +8,22 @@ public class Slicer : MonoBehaviour
     public LayerMask sliceMask;
     public bool isTouched;
     private int slices = 0;
+
     private void Update()
     {
-        if (isTouched == true)
+        if (isTouched)
         {
             isTouched = false;
 
-            Collider[] objectsToBeSliced = Physics.OverlapBox(transform.position, new Vector3(1, 0.1f, 0.1f), transform.rotation, sliceMask);
+            var objectsToBeSliced = Physics.OverlapBox(transform.position, new Vector3(1, 0.1f, 0.1f),
+                transform.rotation, sliceMask);
 
-            foreach (Collider objectToBeSliced in objectsToBeSliced)
+            foreach (var objectToBeSliced in objectsToBeSliced)
             {
-                SlicedHull slicedObject = SliceObject(objectToBeSliced.gameObject, materialAfterSlice);
+                var slicedObject = SliceObject(objectToBeSliced.gameObject, materialAfterSlice);
 
-                GameObject upperHullGameobject = slicedObject.CreateUpperHull(objectToBeSliced.gameObject, materialAfterSlice);
-                GameObject lowerHullGameobject = slicedObject.CreateLowerHull(objectToBeSliced.gameObject, materialAfterSlice);
+                var upperHullGameobject = slicedObject.CreateUpperHull(objectToBeSliced.gameObject, materialAfterSlice);
+                var lowerHullGameobject = slicedObject.CreateLowerHull(objectToBeSliced.gameObject, materialAfterSlice);
 
                 upperHullGameobject.transform.position = objectToBeSliced.transform.position;
                 lowerHullGameobject.transform.position = objectToBeSliced.transform.position;
@@ -35,7 +36,6 @@ public class Slicer : MonoBehaviour
 
 
                 Destroy(objectToBeSliced.gameObject);
-
             }
         }
     }
@@ -45,9 +45,9 @@ public class Slicer : MonoBehaviour
         obj.AddComponent<MeshCollider>().convex = true;
         obj.AddComponent<Rigidbody>();
         obj.GetComponent<Rigidbody>().useGravity = true;
-        obj.GetComponent<Rigidbody>().velocity = Vector3.down*1.5f;
+        obj.GetComponent<Rigidbody>().velocity = Vector3.down * 1.5f;
         obj.layer = 13;
-        
+
         //StartCoroutine(DropThrough(obj));
         StartCoroutine(DestroyDebris(obj));
 
@@ -55,20 +55,11 @@ public class Slicer : MonoBehaviour
         {
             yield return new WaitForSeconds(1.0f);
             Destroy(o);
-
         }
-        // IEnumerator DropThrough(GameObject o)
-        // {
-        //     yield return new WaitForSeconds(0.2f);
-        //     Destroy(o.GetComponent<BoxCollider>());
-        // }
-        
     }
 
     private SlicedHull SliceObject(GameObject obj, Material crossSectionMaterial = null)
     {
         return obj.Slice(transform.position, transform.up, crossSectionMaterial);
     }
-
-
 }

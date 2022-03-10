@@ -1,4 +1,3 @@
-
 using UnityEngine;
 
 public class Scoreboard : MonoBehaviour
@@ -7,18 +6,22 @@ public class Scoreboard : MonoBehaviour
     public int hits;
     public int misses;
 
-    void Start()
+    private void Start()
     {
         hits = 0;
         misses = 0;
         updateText();
     }
 
+    // Update is called once per frame
+    private void Update()
+    {
+    }
+
     public void IncreaseHits()
     {
         hits++;
         updateText();
-
     }
 
     public void IncreaseMisses()
@@ -27,13 +30,8 @@ public class Scoreboard : MonoBehaviour
         updateText();
     }
 
-    void updateText()
+    private void updateText()
     {
-        scoreBoard.text =  "Hits: " + hits; //" + " | " + "Misses: " + misses;
-    }
-    // Update is called once per frame
-    void Update()
-    {
-        
+        scoreBoard.text = "Hits: " + hits; //" + " | " + "Misses: " + misses;
     }
 }
