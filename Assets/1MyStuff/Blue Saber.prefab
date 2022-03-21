@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8238008488208258456}
-  - component: {fileID: 8238008488208258439}
   m_Layer: 0
   m_Name: Blue Saber
   m_TagString: Untagged
@@ -32,19 +31,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: -45, y: 0, z: 0}
---- !u!65 &8238008488208258439
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8238008488208258457}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &8238008488562567225
 GameObject:
   m_ObjectHideFlags: 0
@@ -70,7 +56,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8238008488562567225}
   m_LocalRotation: {x: 0.27059805, y: -0.27059802, z: -0.6532815, w: 0.6532815}
-  m_LocalPosition: {x: 0.005, y: -0.007, z: 0.969}
+  m_LocalPosition: {x: -0.0000000033113694, y: -0.007000003, z: 0.2828427}
   m_LocalScale: {x: 1.0001413, y: 10.526297, z: 10.526297}
   m_Children: []
   m_Father: {fileID: 8238008488821081360}
@@ -152,7 +138,8 @@ GameObject:
   - component: {fileID: 8238008488804406909}
   - component: {fileID: 8238008488804406905}
   - component: {fileID: 3078199944720274130}
-  m_Layer: 0
+  - component: {fileID: 4009127686924136577}
+  m_Layer: 15
   m_Name: Blade
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -235,11 +222,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e7846599b6652b40be7dff9164f8118, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  controller: {fileID: 8238008488208258457}
   slicer: {fileID: 8238008488821081372}
-  layer:
+  pointLayer:
     serializedVersion: 2
     m_Bits: 4096
+  otherSaber:
+    serializedVersion: 2
+    m_Bits: 16384
+  sliceableLayer:
+    serializedVersion: 2
+    m_Bits: 65536
+  missLayer:
+    serializedVersion: 2
+    m_Bits: 2048
+  xr: {fileID: 0}
 --- !u!82 &8238008488804406905
 AudioSource:
   m_ObjectHideFlags: 0
@@ -352,6 +348,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 3
+--- !u!65 &4009127686924136577
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8238008488804406911}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 3, z: 1.2}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &8238008488821081361
 GameObject:
   m_ObjectHideFlags: 0
@@ -465,5 +474,5 @@ MonoBehaviour:
   materialAfterSlice: {fileID: 2100000, guid: 0213d3e4eabcafc4b9c26686efec11c1, type: 2}
   sliceMask:
     serializedVersion: 2
-    m_Bits: 4096
+    m_Bits: 65536
   isTouched: 0

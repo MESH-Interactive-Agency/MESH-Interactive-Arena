@@ -55,6 +55,8 @@ MonoBehaviour:
   cubes:
   - {fileID: 3234175226704927551, guid: c85d71386143a064f814f80b499fe7a4, type: 3}
   - {fileID: 2547880133501760448, guid: 75c78fa368b8e104ab49b2b59738d0f6, type: 3}
+  - {fileID: 4009486873864300075, guid: 15cf51eb16e1a8a41bdaeb5d5550f215, type: 3}
+  - {fileID: 369620610762580576, guid: 843a9df7405925f468cdf0e31e95ba9b, type: 3}
   points:
   - {fileID: 330091546960959942}
   - {fileID: 330091546189639136}
@@ -64,7 +66,11 @@ MonoBehaviour:
   - {fileID: 330091547370577068}
   - {fileID: 330091547324728308}
   - {fileID: 330091546505062933}
-  beat: 0.5350877
+  bpm: 105
+  startDelay: 7
+  endTime: 120
+  self: {fileID: 330091545530115217}
+  song: {fileID: 330091545530115228}
 --- !u!82 &330091545530115228
 AudioSource:
   m_ObjectHideFlags: 0
@@ -75,8 +81,8 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 17642f6810420494fadfd15d74b28a0d, type: 3}
-  m_PlayOnAwake: 1
+  m_audioClip: {fileID: 8300000, guid: 225e2182a1ef4bd4bab37b49cd1c19d3, type: 3}
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
