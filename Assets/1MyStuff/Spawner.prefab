@@ -67,8 +67,8 @@ MonoBehaviour:
   - {fileID: 330091547324728308}
   - {fileID: 330091546505062933}
   bpm: 105
-  startDelay: 7
-  endTime: 120
+  startDelay: 8
+  endTime: 128
   self: {fileID: 330091545530115217}
   song: {fileID: 330091545530115228}
 --- !u!82 &330091545530115228
