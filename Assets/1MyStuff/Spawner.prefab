@@ -66,9 +66,9 @@ MonoBehaviour:
   - {fileID: 330091547370577068}
   - {fileID: 330091547324728308}
   - {fileID: 330091546505062933}
-  bpm: 105
+  bpm: 141
   startDelay: 8
-  endTime: 98
+  endTime: 129
   self: {fileID: 330091545530115217}
   song: {fileID: 330091545530115228}
 --- !u!82 &330091545530115228
@@ -81,7 +81,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 3e1fc2782ff67a746853fc2c3fee1561, type: 3}
+  m_audioClip: {fileID: 8300000, guid: f70227a3ec6eb1d4982585b27f009fb5, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
