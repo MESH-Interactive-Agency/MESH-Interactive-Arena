@@ -10,7 +10,7 @@ public class Slicer : MonoBehaviour
 
     private int slices = 0;
 
-    private void Update()
+    private void FixedUpdate()
     {
         if (isTouched)
         {

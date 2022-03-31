@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Scoreboard : MonoBehaviour
@@ -10,6 +11,7 @@ public class Scoreboard : MonoBehaviour
     public GameObject newGame;
     public AudioSource boom;
     public GameObject[] arenas;
+    public GameObject self;
     private int _previousBeat;
     private float _songTime;
 
@@ -25,7 +27,7 @@ public class Scoreboard : MonoBehaviour
     }
 
     // Update is called once per frame
-    private void Update()
+    private void FixedUpdate()
     {
         UpdateText();
     }
@@ -50,6 +52,7 @@ public class Scoreboard : MonoBehaviour
 
     public void StartGame()
     {
+        self.transform.position = new Vector3(-4.5f, 5, 25);
         isPlaying = true;
         boom.Play();
         Instantiate(spawner, new Vector3(0, 1.5f, 24.5f), Quaternion.identity);
@@ -60,9 +63,18 @@ public class Scoreboard : MonoBehaviour
 
     public void EndGame()
     {
+        boom.Play();
         isPlaying = false;
         RenderSettings.fog = false;
-        Instantiate(newGame, new Vector3(-0.5f, 1.25f, 0.75f), Quaternion.identity);
+        self.transform.position = new Vector3(-4.5f, 0, 5);
+
+        StartCoroutine(StartNewGame());
+    }
+
+    private IEnumerator StartNewGame()
+    {
+        yield return new WaitForSeconds(10f);
+        Instantiate(newGame, new Vector3(-0.625f, 1.25f, 1.25f), Quaternion.identity);
         SetArena(0);
     }
 
@@ -74,7 +86,7 @@ public class Scoreboard : MonoBehaviour
     public void UpdateSongTime(int t)
     {
         _songTime = t;
-        if (_previousBeat < t) //&& t % 1 == 0)
+        if (_previousBeat < t)
         {
             var rand = Random.Range(1, 6);
             SetArena(rand);
@@ -93,6 +105,6 @@ public class Scoreboard : MonoBehaviour
 
     private void UpdateText()
     {
-        scoreBoard.text = "Score: " + (hits - misses) + " Beat(for dev): " + _songTime.ToString("F2");
+        scoreBoard.text = "Score: " + (hits - misses);
     }
 }

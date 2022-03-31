@@ -30,7 +30,7 @@ public class spawner : MonoBehaviour
     }
 
     // Update is called once per frame
-    private void Update()
+    private void FixedUpdate()
     {
         if (_songTime > 0 && !_isPlaying)
         {
@@ -49,7 +49,7 @@ public class spawner : MonoBehaviour
         {
             _beat++;
             FindObjectOfType<Scoreboard>().UpdateSongTime(_beat);
-            if (Random.Range(0, _difficulty) == 0 && _songTime < endTime) SpawnCube();
+            if (Random.Range(0, _difficulty) == 0 && _songTime < endTime - startDelay) SpawnCube();
 
             _timer -= 60 / bpm;
         }
@@ -70,7 +70,7 @@ public class spawner : MonoBehaviour
 
     private void SpawnCube()
     {
-        var cube = Instantiate(cubes[Random.Range(0, 4)], points[Random.Range(0, 8)]);
+        var cube = Instantiate(cubes[Random.Range(0, 2)], points[Random.Range(0, 8)]);
         cube.transform.localPosition = Vector3.zero;
         cube.transform.Rotate(transform.forward, 45 * Random.Range(0, 8));
 

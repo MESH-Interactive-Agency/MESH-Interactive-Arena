@@ -53,9 +53,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cubes:
-  - {fileID: 3234175226704927551, guid: c85d71386143a064f814f80b499fe7a4, type: 3}
   - {fileID: 2547880133501760448, guid: 75c78fa368b8e104ab49b2b59738d0f6, type: 3}
-  - {fileID: 4009486873864300075, guid: 15cf51eb16e1a8a41bdaeb5d5550f215, type: 3}
   - {fileID: 369620610762580576, guid: 843a9df7405925f468cdf0e31e95ba9b, type: 3}
   points:
   - {fileID: 330091546960959942}
@@ -67,8 +65,8 @@ MonoBehaviour:
   - {fileID: 330091547324728308}
   - {fileID: 330091546505062933}
   bpm: 141
-  startDelay: 8
-  endTime: 129
+  startDelay: 6
+  endTime: 60.6
   self: {fileID: 330091545530115217}
   song: {fileID: 330091545530115228}
 --- !u!82 &330091545530115228
