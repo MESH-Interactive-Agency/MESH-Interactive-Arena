@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <?!= include('Stylesheet'); ?>
+  </head>
+  <body>
+    <header class="app-bar">
+      <div class="app-bar__brand">
+        <h1 class="app-bar__title">Kanban</h1>
+        <span id="board-meta" class="app-bar__meta"></span>
+      </div>
+      <div class="app-bar__actions">
+        <span id="sync-state" class="pill" data-state="loading">Loading</span>
+        <button id="refresh-button" class="button" type="button">Refresh</button>
+        <button id="add-task-button" class="button button--primary" type="button">Add task</button>
+      </div>
+    </header>
+
+    <main id="board" class="board" hidden></main>
+
+    <div id="board-loading" class="placeholder">
+      <span class="spinner" aria-hidden="true"></span>
+      Loading the board&hellip;
+    </div>
+
+    <div id="board-error" class="placeholder placeholder--error" hidden>
+      <p id="board-error-message"></p>
+      <button id="retry-button" class="button" type="button">Try again</button>
+    </div>
+
+    <div id="scrim" class="scrim" hidden></div>
+
+    <aside id="editor" class="editor" aria-hidden="true" aria-label="Task details">
+      <header class="editor__header">
+        <h2 class="editor__title">Task details</h2>
+        <button id="editor-close" class="icon-button" type="button" aria-label="Close">&times;</button>
+      </header>
+
+      <div class="editor__body">
+        <label class="field">
+          <span class="field__label">Title</span>
+          <input id="field-title" class="input" data-field="title" type="text" maxlength="200"
+                 autocomplete="off">
+        </label>
+
+        <label class="field">
+          <span class="field__label">Description</span>
+          <textarea id="field-description" class="input input--multiline" data-field="description"
+                    rows="5" maxlength="5000"></textarea>
+        </label>
+
+        <label class="field">
+          <span class="field__label">Status</span>
+          <select id="field-status" class="input" data-field="status"></select>
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span class="field__label">Start date</span>
+            <input id="field-startDate" class="input" data-field="startDate" type="date">
+          </label>
+          <label class="field">
+            <span class="field__label">Due date</span>
+            <input id="field-dueDate" class="input" data-field="dueDate" type="date">
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field__label">Assignee</span>
+          <input id="field-assignee" class="input" data-field="assignee" type="text" maxlength="120"
+                 autocomplete="off">
+        </label>
+
+        <p id="editor-hint" class="editor__hint">Changes save as soon as you leave a field.</p>
+        <p id="editor-error" class="editor__error" hidden></p>
+      </div>
+
+      <footer class="editor__footer">
+        <button id="editor-delete" class="button button--danger" type="button">Delete</button>
+        <button id="editor-done" class="button button--primary" type="button">Done</button>
+      </footer>
+    </aside>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <?!= include('JavaScript'); ?>
+  </body>
+</html>

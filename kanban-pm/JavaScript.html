@@ -1,0 +1,725 @@
+<script>
+(function () {
+  'use strict';
+
+  var REFRESH_INTERVAL_MS = 45000;
+  var TOAST_MS = 4000;
+  var SAVED_PILL_MS = 2000;
+
+  /** Authoritative board state, replaced wholesale by every server response. */
+  var state = { statuses: [], tasks: [], loadedAt: null };
+
+  var sortables = [];
+  var inFlight = 0;
+  var isDragging = false;
+  var editingId = null;
+  var composer = { status: null, text: '' };
+  var refreshTimer = null;
+  var toastTimer = null;
+  var savedPillTimer = null;
+  var dom = {};
+
+  document.addEventListener('DOMContentLoaded', init);
+
+  function init() {
+    dom = {
+      board: document.getElementById('board'),
+      loading: document.getElementById('board-loading'),
+      error: document.getElementById('board-error'),
+      errorMessage: document.getElementById('board-error-message'),
+      retry: document.getElementById('retry-button'),
+      meta: document.getElementById('board-meta'),
+      sync: document.getElementById('sync-state'),
+      refresh: document.getElementById('refresh-button'),
+      addTask: document.getElementById('add-task-button'),
+      scrim: document.getElementById('scrim'),
+      editor: document.getElementById('editor'),
+      editorClose: document.getElementById('editor-close'),
+      editorDone: document.getElementById('editor-done'),
+      editorDelete: document.getElementById('editor-delete'),
+      editorError: document.getElementById('editor-error'),
+      toast: document.getElementById('toast'),
+      status: document.getElementById('field-status')
+    };
+
+    dom.retry.addEventListener('click', loadBoard);
+    dom.refresh.addEventListener('click', function () {
+      loadBoard({ announce: true });
+    });
+    dom.addTask.addEventListener('click', function () {
+      openComposer(state.statuses[0]);
+    });
+    dom.editorClose.addEventListener('click', closeEditor);
+    dom.editorDone.addEventListener('click', closeEditor);
+    dom.scrim.addEventListener('click', closeEditor);
+    dom.editorDelete.addEventListener('click', deleteEditingTask);
+
+    dom.editor.addEventListener('change', handleFieldChange);
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        if (editingId) {
+          closeEditor();
+        } else if (composer.status) {
+          closeComposer();
+        }
+      }
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && state.loadedAt && Date.now() - state.loadedAt > REFRESH_INTERVAL_MS) {
+        loadBoard();
+      }
+    });
+
+    loadBoard();
+  }
+
+  /* --------------------------------------------------------------- server */
+
+  function callServer(name) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(function (error) {
+          reject(new Error(error && error.message ? error.message : String(error)));
+        })[name].apply(null, args);
+    });
+  }
+
+  /** Wraps a mutation so the sync pill and the busy counter stay honest. */
+  function save(promise) {
+    inFlight += 1;
+    setSync('saving', 'Saving');
+    return promise.then(function (result) {
+      inFlight -= 1;
+      if (inFlight === 0) {
+        setSync('saved', 'Saved');
+      }
+      return result;
+    }, function (error) {
+      inFlight -= 1;
+      setSync('error', 'Not saved');
+      throw error;
+    });
+  }
+
+  function loadBoard(options) {
+    var announce = options && options.announce;
+    if (!state.loadedAt) {
+      dom.loading.hidden = false;
+      dom.error.hidden = true;
+      dom.board.hidden = true;
+    }
+    setSync('loading', 'Loading');
+    return callServer('getBoard').then(function (board) {
+      applyBoard(board);
+      setSync('idle', 'Up to date');
+      if (announce) {
+        showToast('Board refreshed');
+      }
+    }).catch(function (error) {
+      setSync('error', 'Offline');
+      if (!state.loadedAt) {
+        dom.loading.hidden = true;
+        dom.board.hidden = true;
+        dom.error.hidden = false;
+        dom.errorMessage.textContent = error.message;
+      } else {
+        showToast(error.message, 'error');
+      }
+    }).then(scheduleRefresh);
+  }
+
+  function applyBoard(board) {
+    state.statuses = (board && board.statuses) || [];
+    state.tasks = ((board && board.tasks) || []).map(function (task) {
+      return {
+        id: task.id,
+        title: task.title || '',
+        description: task.description || '',
+        status: task.status || '',
+        startDate: task.startDate || '',
+        dueDate: task.dueDate || '',
+        assignee: task.assignee || '',
+        position: Number(task.position) || 0,
+        updatedAt: task.updatedAt || ''
+      };
+    });
+    state.loadedAt = Date.now();
+
+    dom.loading.hidden = true;
+    dom.error.hidden = true;
+    dom.board.hidden = false;
+
+    renderBoard();
+    renderMeta();
+
+    if (editingId) {
+      if (findTask(editingId)) {
+        syncEditorFromState();
+      } else {
+        closeEditor();
+        showToast('That task was deleted by someone else.', 'error');
+      }
+    }
+  }
+
+  /* -------------------------------------------------------------- polling */
+
+  function scheduleRefresh() {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(function () {
+      if (isBusy()) {
+        scheduleRefresh();
+        return;
+      }
+      callServer('getBoard').then(applyBoard).catch(function () {
+        // A failed background poll is not worth interrupting anyone over.
+      }).then(scheduleRefresh);
+    }, REFRESH_INTERVAL_MS);
+  }
+
+  /** Background refreshes never clobber work in progress. */
+  function isBusy() {
+    return inFlight > 0 || isDragging || !!editingId || !!composer.status || document.hidden;
+  }
+
+  /* ------------------------------------------------------------ rendering */
+
+  function renderBoard() {
+    var scrollLeft = dom.board.scrollLeft;
+    var scrollTops = {};
+    Array.prototype.forEach.call(dom.board.querySelectorAll('.column__list'), function (list) {
+      scrollTops[list.getAttribute('data-status')] = list.scrollTop;
+    });
+
+    destroySortables();
+    dom.board.textContent = '';
+
+    state.statuses.forEach(function (status) {
+      dom.board.appendChild(buildColumn(status, tasksIn(status), true));
+    });
+    orphanStatuses().forEach(function (status) {
+      dom.board.appendChild(buildColumn(status, tasksIn(status), false));
+    });
+
+    Array.prototype.forEach.call(dom.board.querySelectorAll('.column__list'), function (list) {
+      var previous = scrollTops[list.getAttribute('data-status')];
+      if (previous) {
+        list.scrollTop = previous;
+      }
+    });
+    dom.board.scrollLeft = scrollLeft;
+
+    initSortables();
+  }
+
+  function buildColumn(status, tasks, isKnown) {
+    var column = element('section', 'column');
+    column.setAttribute('data-status', status);
+
+    var header = element('header', 'column__header');
+    var name = element('h2', 'column__name', isKnown ? status : status + ' (not a board column)');
+    var count = element('span', 'column__count', String(tasks.length));
+    header.appendChild(name);
+    header.appendChild(count);
+    column.appendChild(header);
+
+    var list = element('div', 'column__list');
+    list.setAttribute('data-status', status);
+    list.setAttribute('data-known', isKnown ? 'true' : 'false');
+    tasks.forEach(function (task) {
+      list.appendChild(buildCard(task, status));
+    });
+    column.appendChild(list);
+
+    if (isKnown) {
+      column.appendChild(buildColumnFooter(status));
+    }
+    return column;
+  }
+
+  function buildColumnFooter(status) {
+    var footer = element('div', 'column__footer');
+    if (composer.status === status) {
+      var form = element('form', 'composer');
+      var input = element('textarea', 'composer__input');
+      input.placeholder = 'What needs doing?';
+      input.value = composer.text;
+      input.addEventListener('input', function () {
+        composer.text = input.value;
+      });
+      input.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          form.requestSubmit ? form.requestSubmit() : submitComposer(status);
+        }
+      });
+
+      var actions = element('div', 'composer__actions');
+      var add = element('button', 'button button--primary', 'Add');
+      add.type = 'submit';
+      var cancel = element('button', 'button', 'Cancel');
+      cancel.type = 'button';
+      cancel.addEventListener('click', function () {
+        closeComposer();
+      });
+      actions.appendChild(add);
+      actions.appendChild(cancel);
+
+      form.appendChild(input);
+      form.appendChild(actions);
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        submitComposer(status);
+      });
+      footer.appendChild(form);
+      window.setTimeout(function () {
+        input.focus();
+      }, 0);
+    } else {
+      var button = element('button', 'column__add', '+ Add task');
+      button.type = 'button';
+      button.addEventListener('click', function () {
+        openComposer(status);
+      });
+      footer.appendChild(button);
+    }
+    return footer;
+  }
+
+  function buildCard(task, status) {
+    var card = element('article', 'card');
+    card.setAttribute('data-id', task.id);
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.appendChild(element('div', 'card__title', task.title || '(untitled)'));
+
+    if (task.description) {
+      card.appendChild(element('p', 'card__description', task.description));
+    }
+
+    var meta = element('div', 'card__meta');
+    var due = buildDueChip(task, status);
+    if (due) {
+      meta.appendChild(due);
+    }
+    if (task.assignee) {
+      var chip = element('span', 'chip');
+      chip.appendChild(element('span', 'avatar', initials(task.assignee)));
+      chip.appendChild(element('span', 'chip__text', task.assignee));
+      meta.appendChild(chip);
+    }
+    if (meta.childNodes.length) {
+      card.appendChild(meta);
+    }
+
+    card.addEventListener('click', function () {
+      openEditor(task.id);
+    });
+    card.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openEditor(task.id);
+      }
+    });
+    return card;
+  }
+
+  function buildDueChip(task, status) {
+    if (!task.dueDate) {
+      return null;
+    }
+    var chip = element('span', 'chip');
+    var days = daysUntil(task.dueDate);
+    var isFinalColumn = state.statuses.length &&
+      status === state.statuses[state.statuses.length - 1];
+    if (days !== null && !isFinalColumn) {
+      if (days < 0) {
+        chip.className += ' chip--overdue';
+      } else if (days <= 1) {
+        chip.className += ' chip--soon';
+      }
+    }
+    chip.appendChild(element('span', 'chip__text', 'Due ' + formatDate(task.dueDate)));
+    chip.title = 'Due ' + task.dueDate + (task.startDate ? ' \u00b7 starts ' + task.startDate : '');
+    return chip;
+  }
+
+  function renderMeta() {
+    var count = state.tasks.length;
+    var time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    dom.meta.textContent = count + (count === 1 ? ' task' : ' tasks') + ' \u00b7 synced ' + time;
+  }
+
+  /* ---------------------------------------------------- drag and drop */
+
+  function initSortables() {
+    if (typeof Sortable === 'undefined') {
+      return;
+    }
+    Array.prototype.forEach.call(dom.board.querySelectorAll('.column__list'), function (list) {
+      var known = list.getAttribute('data-known') === 'true';
+      sortables.push(Sortable.create(list, {
+        group: { name: 'tasks', pull: true, put: known },
+        animation: 150,
+        delay: 120,
+        delayOnTouchOnly: true,
+        touchStartThreshold: 4,
+        fallbackOnBody: true,
+        swapThreshold: 0.7,
+        ghostClass: 'card-ghost',
+        chosenClass: 'card-chosen',
+        dragClass: 'card-drag',
+        onStart: function () {
+          isDragging = true;
+        },
+        onEnd: handleDragEnd
+      }));
+    });
+  }
+
+  function destroySortables() {
+    sortables.forEach(function (sortable) {
+      sortable.destroy();
+    });
+    sortables = [];
+  }
+
+  function handleDragEnd(event) {
+    isDragging = false;
+    var id = event.item.getAttribute('data-id');
+    var status = event.to.getAttribute('data-status');
+    var index = event.newIndex;
+    var unchanged = event.to === event.from && event.oldIndex === event.newIndex;
+    if (!id || !status || unchanged) {
+      return;
+    }
+
+    var snapshot = snapshotTasks();
+    applyLocalMove(id, status, index);
+    renderBoard();
+
+    save(callServer('moveTask', id, status, index)).then(function (result) {
+      applyBoard(result.board);
+    }).catch(function (error) {
+      state.tasks = snapshot;
+      renderBoard();
+      showToast(error.message, 'error');
+    });
+  }
+
+  /** Mirrors the server's ordering rules so the board looks right immediately. */
+  function applyLocalMove(id, status, index) {
+    var task = findTask(id);
+    if (!task) {
+      return;
+    }
+    var from = task.status;
+    var destination = state.tasks.filter(function (other) {
+      return other.id !== id && other.status === status;
+    }).sort(byPosition);
+
+    task.status = status;
+    destination.splice(Math.max(0, Math.min(index, destination.length)), 0, task);
+    destination.forEach(function (item, position) {
+      item.position = position + 1;
+    });
+
+    if (from !== status) {
+      state.tasks.filter(function (other) {
+        return other.status === from;
+      }).sort(byPosition).forEach(function (item, position) {
+        item.position = position + 1;
+      });
+    }
+  }
+
+  /* --------------------------------------------------------- create task */
+
+  function openComposer(status) {
+    if (!status) {
+      return;
+    }
+    composer = { status: status, text: '' };
+    renderBoard();
+    var column = dom.board.querySelector('.column[data-status="' + cssEscape(status) + '"]');
+    if (column && column.scrollIntoView) {
+      column.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+  }
+
+  function closeComposer() {
+    composer = { status: null, text: '' };
+    renderBoard();
+  }
+
+  function submitComposer(status) {
+    var title = composer.text.trim();
+    if (!title) {
+      return;
+    }
+    composer.text = '';
+    save(callServer('createTask', { title: title, status: status })).then(function (result) {
+      applyBoard(result.board);
+      var list = dom.board.querySelector('.column[data-status="' + cssEscape(status) + '"] .column__list');
+      if (list) {
+        list.scrollTop = list.scrollHeight;
+      }
+    }).catch(function (error) {
+      composer.text = title;
+      renderBoard();
+      showToast(error.message, 'error');
+    });
+  }
+
+  /* --------------------------------------------------------------- editor */
+
+  function openEditor(id) {
+    var task = findTask(id);
+    if (!task) {
+      return;
+    }
+    editingId = id;
+    renderStatusOptions();
+    fillEditor(task, null);
+    clearEditorError();
+    dom.editor.classList.add('is-open');
+    dom.editor.setAttribute('aria-hidden', 'false');
+    dom.scrim.hidden = false;
+    window.setTimeout(function () {
+      document.getElementById('field-title').focus();
+    }, 60);
+  }
+
+  function closeEditor() {
+    editingId = null;
+    dom.editor.classList.remove('is-open');
+    dom.editor.setAttribute('aria-hidden', 'true');
+    dom.scrim.hidden = true;
+    clearEditorError();
+  }
+
+  function renderStatusOptions() {
+    dom.status.textContent = '';
+    state.statuses.forEach(function (status) {
+      var option = document.createElement('option');
+      option.value = status;
+      option.textContent = status;
+      dom.status.appendChild(option);
+    });
+  }
+
+  function fillEditor(task, skipField) {
+    ['title', 'description', 'status', 'startDate', 'dueDate', 'assignee'].forEach(function (field) {
+      if (field === skipField) {
+        return;
+      }
+      var input = document.getElementById('field-' + field);
+      if (input) {
+        input.value = task[field] || '';
+        input.classList.remove('is-invalid');
+      }
+    });
+  }
+
+  /** Keeps the panel current after a server response without stealing focus. */
+  function syncEditorFromState() {
+    var task = findTask(editingId);
+    if (!task) {
+      return;
+    }
+    var focused = document.activeElement;
+    var skip = focused && focused.getAttribute ? focused.getAttribute('data-field') : null;
+    fillEditor(task, skip);
+  }
+
+  function handleFieldChange(event) {
+    var input = event.target;
+    var field = input.getAttribute && input.getAttribute('data-field');
+    if (!field || !editingId) {
+      return;
+    }
+    var id = editingId;
+    var task = findTask(id);
+    if (!task) {
+      return;
+    }
+    var value = field === 'description' ? input.value : String(input.value).trim();
+    if (value === (task[field] || '')) {
+      return;
+    }
+
+    var changes = {};
+    changes[field] = value;
+    clearEditorError();
+    input.classList.remove('is-invalid');
+
+    save(callServer('updateTask', id, changes)).then(function (result) {
+      applyBoard(result.board);
+    }).catch(function (error) {
+      var current = findTask(id);
+      if (current) {
+        input.value = current[field] || '';
+      }
+      input.classList.add('is-invalid');
+      showEditorError(error.message);
+      showToast(error.message, 'error');
+    });
+  }
+
+  function deleteEditingTask() {
+    var id = editingId;
+    var task = findTask(id);
+    if (!task) {
+      return;
+    }
+    if (!window.confirm('Delete "' + task.title + '"? This cannot be undone.')) {
+      return;
+    }
+    closeEditor();
+    save(callServer('deleteTask', id)).then(function (result) {
+      applyBoard(result.board);
+      showToast('Task deleted');
+    }).catch(function (error) {
+      showToast(error.message, 'error');
+    });
+  }
+
+  function showEditorError(message) {
+    dom.editorError.textContent = message;
+    dom.editorError.hidden = false;
+  }
+
+  function clearEditorError() {
+    dom.editorError.textContent = '';
+    dom.editorError.hidden = true;
+  }
+
+  /* -------------------------------------------------------------- feedback */
+
+  function setSync(tone, text) {
+    clearTimeout(savedPillTimer);
+    dom.sync.setAttribute('data-state', tone);
+    dom.sync.textContent = text;
+    if (tone === 'saved') {
+      savedPillTimer = setTimeout(function () {
+        dom.sync.setAttribute('data-state', 'idle');
+        dom.sync.textContent = 'Up to date';
+      }, SAVED_PILL_MS);
+    }
+  }
+
+  function showToast(message, tone) {
+    clearTimeout(toastTimer);
+    dom.toast.textContent = message;
+    dom.toast.setAttribute('data-tone', tone || 'info');
+    dom.toast.hidden = false;
+    toastTimer = setTimeout(function () {
+      dom.toast.hidden = true;
+    }, TOAST_MS);
+  }
+
+  /* --------------------------------------------------------------- helpers */
+
+  function element(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) {
+      node.className = className;
+    }
+    if (text != null) {
+      node.textContent = text;
+    }
+    return node;
+  }
+
+  function findTask(id) {
+    for (var i = 0; i < state.tasks.length; i++) {
+      if (state.tasks[i].id === id) {
+        return state.tasks[i];
+      }
+    }
+    return null;
+  }
+
+  function tasksIn(status) {
+    return state.tasks.filter(function (task) {
+      return task.status === status;
+    }).sort(byPosition);
+  }
+
+  /** Statuses present on rows but missing from the Settings sheet. */
+  function orphanStatuses() {
+    var seen = [];
+    state.tasks.forEach(function (task) {
+      if (state.statuses.indexOf(task.status) === -1 && seen.indexOf(task.status) === -1) {
+        seen.push(task.status);
+      }
+    });
+    return seen;
+  }
+
+  function byPosition(a, b) {
+    if (a.position !== b.position) {
+      return a.position - b.position;
+    }
+    return a.title.localeCompare(b.title);
+  }
+
+  function snapshotTasks() {
+    return state.tasks.map(function (task) {
+      var copy = {};
+      Object.keys(task).forEach(function (key) {
+        copy[key] = task[key];
+      });
+      return copy;
+    });
+  }
+
+  function initials(name) {
+    var parts = String(name).trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) {
+      return '?';
+    }
+    if (parts.length === 1) {
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  /** Parses yyyy-MM-dd as a local calendar day, never a UTC instant. */
+  function parseDate(value) {
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+    if (!match) {
+      return null;
+    }
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+
+  function daysUntil(value) {
+    var date = parseDate(value);
+    if (!date) {
+      return null;
+    }
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.round((date.getTime() - today.getTime()) / 86400000);
+  }
+
+  function formatDate(value) {
+    var date = parseDate(value);
+    if (!date) {
+      return String(value);
+    }
+    var options = { month: 'short', day: 'numeric' };
+    if (date.getFullYear() !== new Date().getFullYear()) {
+      options.year = 'numeric';
+    }
+    return date.toLocaleDateString([], options);
+  }
+
+  function cssEscape(value) {
+    return String(value).replace(/["\\]/g, '\\$&');
+  }
+}());
+</script>
