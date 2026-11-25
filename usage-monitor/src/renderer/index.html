@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'">
+  <title>Claude Usage</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Claude usage</h1>
+      <div id="plan" class="muted"></div>
+    </div>
+    <span id="status" class="badge unknown">Loading…</span>
+  </header>
+
+  <div id="error" class="error" hidden></div>
+
+  <section class="card" id="sessionCard">
+    <div class="row"><h2>Session <span class="muted">· 5-hour window</span></h2><strong id="sessionPct">–</strong></div>
+    <div class="bar"><div id="sessionBar"></div></div>
+    <div class="row muted small"><span id="sessionReset">–</span><span id="sessionCountdown"></span></div>
+  </section>
+
+  <section class="card" id="weeklyCard">
+    <div class="row"><h2>Weekly <span class="muted">· all models</span></h2><strong id="weeklyPct">–</strong></div>
+    <div class="bar"><div id="weeklyBar"></div></div>
+    <div class="row muted small"><span id="weeklyReset">–</span><span id="weeklyCountdown"></span></div>
+    <div id="weeklyExtra" class="extra"></div>
+  </section>
+
+  <section class="card">
+    <h2>Claude Code tokens <span class="muted">· this computer</span></h2>
+    <div class="grid">
+      <div><div class="muted small">Today</div><div class="big" id="todayTokens">–</div><div class="muted small" id="todayMsgs"></div></div>
+      <div><div class="muted small">This week (Mon–)</div><div class="big" id="weekTokens">–</div><div class="muted small" id="weekMsgs"></div></div>
+    </div>
+    <div id="models" class="models"></div>
+  </section>
+
+  <footer>
+    <span class="muted small" id="updated">–</span>
+    <div class="actions">
+      <label class="small"><input type="checkbox" id="pin"> On top</label>
+      <button id="refresh">Refresh</button>
+    </div>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

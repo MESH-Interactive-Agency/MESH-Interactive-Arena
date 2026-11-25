@@ -1,0 +1,34 @@
+:root {
+  --bg: #0f1115; --card: #171a21; --line: #262b36; --text: #e8eaf0; --muted: #8b93a7;
+  --ok: #34c759; --warning: #ffb020; --critical: #ff6347; --limited: #dc2626; --unknown: #6b7280;
+}
+@media (prefers-color-scheme: light) {
+  :root { --bg: #f5f6f8; --card: #ffffff; --line: #e3e6ec; --text: #14161c; --muted: #5f677a; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; background: var(--bg); color: var(--text);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+h1 { font-size: 17px; margin: 0; }
+h2 { font-size: 13px; margin: 0; font-weight: 600; }
+.muted { color: var(--muted); font-weight: 400; }
+.small { font-size: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.row strong { font-size: 20px; font-variant-numeric: tabular-nums; }
+.bar { height: 10px; background: var(--line); border-radius: 6px; overflow: hidden; margin: 8px 0 6px; }
+.bar > div { height: 100%; width: 0; background: var(--unknown); border-radius: 6px; transition: width .6s ease, background .3s; }
+.badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; color: #fff; background: var(--unknown); }
+.badge.ok { background: var(--ok); } .badge.warning { background: var(--warning); color: #1a1200; }
+.badge.critical { background: var(--critical); } .badge.limited { background: var(--limited); }
+.ok { --c: var(--ok); } .warning { --c: var(--warning); } .critical { --c: var(--critical); } .limited { --c: var(--limited); }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.big { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.models, .extra { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.models div, .extra div { display: flex; justify-content: space-between; }
+.error { background: color-mix(in srgb, var(--critical) 15%, transparent); border: 1px solid var(--critical);
+  border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 13px; user-select: text; }
+footer { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+.actions { display: flex; gap: 10px; align-items: center; }
+button { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+button:hover { border-color: var(--muted); }

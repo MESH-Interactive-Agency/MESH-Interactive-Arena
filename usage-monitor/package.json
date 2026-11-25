@@ -1,0 +1,26 @@
+{
+  "name": "claude-usage-monitor",
+  "version": "1.0.0",
+  "description": "Desktop tray app showing live Claude session (5-hour) and weekly usage limits.",
+  "main": "src/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.meshagency.claude-usage-monitor",
+    "productName": "Claude Usage Monitor",
+    "files": ["src/**/*", "package.json"],
+    "mac": { "category": "public.app-category.productivity", "target": "dmg" },
+    "win": { "target": "nsis" },
+    "linux": { "target": "AppImage" }
+  }
+}
