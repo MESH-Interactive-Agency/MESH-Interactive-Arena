@@ -16,12 +16,18 @@ const alerted = { session: 0, weekly: 0 }; // highest threshold already notified
 function pct(w) { return w ? Math.round(w.percent) : null; }
 
 function createWindow() {
+  const mac = process.platform === 'darwin';
   win = new BrowserWindow({
-    width: 360, height: 560, show: false, resizable: true, minWidth: 320, minHeight: 420,
-    title: 'Claude Usage', backgroundColor: '#0f1115', autoHideMenuBar: true,
+    width: 380, height: 800, show: false, resizable: true, minWidth: 340, minHeight: 560,
+    title: 'Claude Usage', autoHideMenuBar: true,
+    // frosted glass on macOS, frameless dark panel elsewhere
+    ...(mac
+      ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 16 }, vibrancy: 'under-window',
+          visualEffectState: 'active', backgroundColor: '#00000000', transparent: true }
+      : { frame: false, backgroundColor: '#0b0d12' }),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
-  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  win.loadFile(path.join(__dirname, 'renderer', 'index.html'), { query: { platform: process.platform } });
   win.once('ready-to-show', () => win.show());
   win.on('close', e => { if (!app.isQuitting) { e.preventDefault(); win.hide(); } });
 }
@@ -97,6 +103,7 @@ app.whenReady().then(() => {
   ipcMain.handle('usage:get', () => latest);
   ipcMain.handle('usage:refresh', async () => { await refresh(); return latest; });
   ipcMain.handle('win:pin', (_e, on) => { win?.setAlwaysOnTop(!!on, 'floating'); return !!on; });
+  ipcMain.handle('win:hide', () => win?.hide());
   ipcMain.handle('open:external', (_e, url) => { if (/^https:\/\/claude\.ai\//.test(url)) shell.openExternal(url); });
 
   createWindow();

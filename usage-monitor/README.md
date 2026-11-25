@@ -5,7 +5,9 @@ A small desktop tray app that shows your Claude plan usage live:
 - **Session (5-hour window)**: % used, reset time and countdown
 - **Weekly limit**: % used, reset time, plus Opus or Sonnet weekly caps when your plan has them
 - **Status badge**: Normal (under 70%) · Heads up (70%+) · Near limit (90%+) · Limited (100%)
-- **Claude Code tokens**: today and this week (from Monday) on this computer, split by model
+- **Dual-ring gauge**: the outer ring is weekly and the inner ring is the session. Notches mark 70% and 90%.
+- **Claude Code activity**: a 7-day token chart (hover a bar for details), today and this-week totals, and a split by model
+- Dark glass design. On macOS it uses the native frosted-glass window effect.
 - A tray icon gauge that changes color with your status. On macOS the menu bar shows `46% · 78%` (session · weekly).
 - Desktop notifications at 70%, 90% and 100% for both windows
 - Updates every 60 seconds. "On top" pins the window above other windows. You can also turn on "Start at login".

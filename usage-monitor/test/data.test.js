@@ -84,3 +84,13 @@ test('tray gauge is a valid PNG', () => {
   const png = gaugePng(60, 'warning');
   assert.deepStrictEqual([...png.subarray(1, 4)], [0x50, 0x4e, 0x47]);
 });
+
+test('local usage builds a 7-day series', () => {
+  const now = Date.parse('2026-11-25T15:00:00');
+  const r = computeLocalUsage(now);
+  assert.strictEqual(r.days.length, 7);
+  assert.strictEqual(r.days[6].total, 135);           // today
+  assert.strictEqual(r.days[4].total, 135);           // Monday
+  assert.strictEqual(r.days[3].total, 135);           // Sunday (last week) still in the rolling chart
+  assert.strictEqual(r.week.total, 270);              // but not in this-week totals
+});
