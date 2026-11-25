@@ -1,5 +1,10 @@
 # Claude Usage Monitor
 
+> **Easiest option: Usage Pulse.** `web/usage-pulse.html` is the same monitor published as a Claude artifact
+> (https://claude.ai/artifact/6Lx3LgHqZdT99RD7AV5vQa). Open it in the Claude desktop app and choose
+> **Install as app**. It runs as a Mac app with a menu bar item, Dock badge and notifications, and you don't need Node or Electron.
+> The Electron app below is a standalone alternative.
+
 A small desktop tray app that shows your Claude plan usage live:
 
 - **Session (5-hour window)**: % used, reset time and countdown

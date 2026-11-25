@@ -1,0 +1,668 @@
+<title>Usage Pulse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<script type="application/json" id="claude-artifacts-manifest">{"permissions": ["full-access", "notifications", "menu-bar"]}</script>
+<style>
+/* Layout: one narrow instrument column — gauge, two limit cards, 7-day activity — centred when the view is wider. */
+:root {
+  color-scheme: dark;
+  --bg: #0b0d12;
+  --glass: rgba(22, 25, 34, 0.66);
+  --edge: rgba(255, 255, 255, 0.08);
+  --edge-hi: rgba(255, 255, 255, 0.16);
+  --text: #eef1f7;
+  --muted: #8d95a8;
+  --faint: #5f6678;
+  --track: rgba(255, 255, 255, 0.07);
+  --good: #0aac23; --good-hi: #5cf07a;
+  --warning: #fbb315; --warning-hi: #ffe08a;
+  --serious: #f18a59; --serious-hi: #ffc2a3;
+  --critical: #dc3c3d; --critical-hi: #ff8a8a;
+  --unknown: #5f6678; --unknown-hi: #8d95a8;
+  --series-1: #338ced; --series-2: #e76624; --series-3: #00a888; --series-other: #6b7385;
+  --accent: #8b7bff;
+  --font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font: 13px/1.35 var(--font);
+  -webkit-font-smoothing: antialiased; user-select: none;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 12px;
+}
+body.app { background: rgba(10, 12, 18, 0.55); } /* let macOS vibrancy show through in the installed app */
+.wrap { max-width: 400px; margin: 0 auto; position: relative; }
+
+.aurora { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.aurora i { position: absolute; width: 360px; height: 360px; border-radius: 50%; filter: blur(70px); opacity: .32; animation: drift 22s ease-in-out infinite alternate; }
+.aurora i:nth-child(1) { background: var(--status-glow, #3b5bff); top: -120px; left: -80px; }
+.aurora i:nth-child(2) { background: #7a3cff; top: 140px; right: -160px; animation-duration: 28s; opacity: .2; }
+.aurora i:nth-child(3) { background: #00a3a3; bottom: -180px; left: 20px; animation-duration: 34s; opacity: .16; }
+@keyframes drift { to { transform: translate(40px, 60px) scale(1.15); } }
+@media (prefers-reduced-motion: reduce) { .aurora i, .live .dot, .arc, .bar, .meter > div { animation: none !important; transition: none !important; } }
+
+.titlebar { app-region: drag; -webkit-app-region: drag; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 46px; }
+body.app.mac .titlebar { padding-left: 70px; }
+.no-drag, button, a { app-region: no-drag; -webkit-app-region: no-drag; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.name { font-weight: 650; letter-spacing: .2px; }
+.plan { font-size: 11px; color: var(--muted); border: 1px solid var(--edge-hi); border-radius: 999px; padding: 1px 8px; }
+.plan:empty { display: none; }
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; color: var(--muted); }
+.live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); animation: pulse 2s infinite; }
+body.stale .live .dot { background: var(--unknown); animation: none; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(10,172,35,.6); } 70%, 100% { box-shadow: 0 0 0 7px rgba(10,172,35,0); } }
+
+.icon-btn { width: 30px; height: 30px; display: grid; place-items: center; background: transparent; border: 1px solid transparent; border-radius: 8px; color: var(--muted); cursor: pointer; }
+.icon-btn:hover { background: var(--glass); border-color: var(--edge); color: var(--text); }
+.icon-btn:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.icon-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.icon-btn.spin svg { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; background: rgba(139, 123, 255, .12); border: 1px solid rgba(139, 123, 255, .4); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+.banner p { margin: 0; flex: 1 1 200px; min-width: 0; }
+.banner.error { background: rgba(220, 60, 61, .13); border-color: rgba(220, 60, 61, .5); user-select: text; }
+.btn { font: inherit; font-weight: 650; color: #fff; background: var(--accent); border: 0; border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--edge-hi); }
+
+.hero { position: relative; width: 236px; height: 236px; margin: 4px auto 14px; }
+#gauge { width: 100%; height: 100%; overflow: visible; }
+.track, .arc { fill: none; stroke-width: 14; }
+.track { stroke: var(--track); }
+.arc { stroke-linecap: round; transform: rotate(-90deg); transform-origin: 130px 130px; transition: stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1), opacity .3s; }
+.tick { stroke: rgba(255,255,255,.45); stroke-width: 2; stroke-linecap: round; }
+.ring-label { font: 700 9px var(--font); letter-spacing: 1px; fill: var(--muted); }
+.s0 { stop-color: var(--c0, var(--unknown)); } .s1 { stop-color: var(--c1, var(--unknown-hi)); }
+.hero-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.headline { font-size: 52px; font-weight: 750; letter-spacing: -2px; font-variant-numeric: tabular-nums; line-height: 1; margin-top: 6px; }
+.headline small { font-size: 20px; font-weight: 600; color: var(--muted); letter-spacing: 0; margin-left: 2px; }
+.sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+.status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; padding: 3px 9px 3px 6px; border-radius: 999px; background: color-mix(in srgb, var(--sc) 18%, transparent); color: color-mix(in srgb, var(--sc) 55%, white); border: 1px solid color-mix(in srgb, var(--sc) 45%, transparent); }
+.status-icon { width: 13px; height: 13px; display: inline-grid; place-items: center; border-radius: 50%; background: var(--sc); color: var(--bg); font-size: 9px; font-weight: 900; line-height: 1; }
+.status.good { --sc: var(--good); } .status.warning { --sc: var(--warning); } .status.serious { --sc: var(--serious); }
+.status.critical { --sc: var(--critical); } .status.unknown { --sc: var(--unknown); }
+
+.limits { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.limit, .panel { background: var(--glass); border: 1px solid var(--edge); border-radius: 16px; backdrop-filter: blur(18px) saturate(140%); box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 8px 24px rgba(0,0,0,.25); min-width: 0; }
+.limit { padding: 12px; }
+.limit header { display: flex; align-items: center; gap: 6px; font-weight: 650; font-size: 12px; }
+.limit header em, .panel h2 em { font-style: normal; color: var(--muted); font-weight: 500; }
+.swatch { width: 10px; height: 10px; border-radius: 50%; border: 2.5px solid var(--muted); flex: none; }
+.swatch.inner { width: 8px; height: 8px; }
+.pct { font-size: 30px; font-weight: 750; letter-spacing: -1px; font-variant-numeric: tabular-nums; margin: 4px 0 6px; }
+.pct small { font-size: 14px; color: var(--muted); font-weight: 600; margin-left: 1px; }
+.meter { height: 5px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.meter > div { height: 100%; width: 0; border-radius: 3px; background: var(--unknown); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+.limit footer { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.chip { font-variant-numeric: tabular-nums; color: var(--text); background: rgba(255,255,255,.06); border: 1px solid var(--edge); border-radius: 6px; padding: 1px 6px; }
+.chip:empty { display: none; }
+.extra { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.extra:empty { display: none; }
+.extra span { font-size: 11px; color: var(--muted); background: var(--glass); border: 1px solid var(--edge); border-radius: 999px; padding: 3px 10px; }
+.extra b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+.panel { padding: 14px; margin-top: 10px; position: relative; }
+.panel h2 { font-size: 12px; margin: 0; font-weight: 650; text-wrap: balance; }
+.totals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 6px; }
+.totals label { display: block; font-size: 11px; color: var(--muted); }
+.totals strong { display: block; font-size: 22px; font-weight: 750; letter-spacing: -.5px; font-variant-numeric: tabular-nums; }
+.totals span { font-size: 11px; color: var(--faint); }
+.note { font-size: 11px; color: var(--muted); margin: 8px 0 0; }
+.note:empty { display: none; }
+
+.chart { height: 108px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; padding-top: 18px; border-bottom: 1px solid var(--edge); }
+.col { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.col::after { content: ""; position: absolute; inset: -18px -3px 0; } /* hit target larger than the bar */
+.bar { width: 100%; max-width: 26px; min-height: 2px; border-radius: 4px 4px 0 0; background: color-mix(in srgb, var(--series-1) 45%, transparent); transition: height .9s cubic-bezier(.2,.8,.2,1), background .2s; }
+.col.today .bar { background: linear-gradient(180deg, #84b9f3, var(--series-1)); box-shadow: 0 0 16px rgba(51,140,237,.45); }
+.col:hover .bar { background: #6aabf1; }
+.val { position: absolute; font-size: 10px; font-weight: 700; color: var(--text); white-space: nowrap; }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 5px; text-align: center; font-size: 10px; color: var(--faint); font-weight: 600; }
+.days .today { color: var(--text); }
+.tooltip { position: absolute; z-index: 5; pointer-events: none; background: rgba(12,14,20,.96); border: 1px solid var(--edge-hi); border-radius: 8px; padding: 6px 9px; font-size: 11px; white-space: nowrap; transform: translate(-50%, -100%); box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+.tooltip b { display: block; font-size: 13px; }
+
+.split { display: flex; gap: 2px; height: 8px; margin-top: 14px; border-radius: 4px; overflow: hidden; }
+.split:empty { display: none; }
+.split > div { height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 11px; color: var(--muted); }
+.legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 8px; height: 8px; border-radius: 2px; }
+.legend b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.bottombar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--edge); font-size: 11px; color: var(--muted); }
+.bottombar a { color: var(--muted); }
+.bottombar a:hover { color: var(--text); }
+</style>
+
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="wrap">
+  <header class="titlebar">
+    <div class="brand">
+      <span class="live"><span class="dot"></span><span id="liveText">LIVE</span></span>
+      <span class="name">Usage Pulse</span>
+      <span id="plan" class="plan"></span>
+    </div>
+    <button id="refresh" class="icon-btn" title="Refresh now" aria-label="Refresh now">
+      <svg viewBox="0 0 16 16"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/></svg>
+    </button>
+  </header>
+
+  <div id="banner" class="banner" hidden><p id="bannerText"></p><button id="bannerBtn" class="btn" hidden></button></div>
+
+  <section class="hero">
+    <svg id="gauge" viewBox="0 0 260 260" role="img" aria-labelledby="gaugeTitle">
+      <title id="gaugeTitle">Outer ring: weekly limit used. Inner ring: 5-hour session used.</title>
+      <defs>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="5" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <linearGradient id="gWeekly" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="s0"/><stop offset="1" class="s1"/></linearGradient>
+        <linearGradient id="gSession" x1="0" y1="0" x2="1" y2="1"><stop offset="0" class="s0"/><stop offset="1" class="s1"/></linearGradient>
+      </defs>
+      <g id="ticks"></g>
+      <circle class="track" cx="130" cy="130" r="112"/>
+      <circle class="track" cx="130" cy="130" r="86"/>
+      <circle id="arcWeekly" class="arc" cx="130" cy="130" r="112" stroke="url(#gWeekly)" filter="url(#glow)"/>
+      <circle id="arcSession" class="arc" cx="130" cy="130" r="86" stroke="url(#gSession)" filter="url(#glow)"/>
+      <text class="ring-label" x="112" y="23" text-anchor="end">7D</text>
+      <text class="ring-label" x="112" y="49" text-anchor="end">5H</text>
+    </svg>
+    <div class="hero-center">
+      <div id="statusChip" class="status unknown"><span id="statusIcon" class="status-icon">?</span><span id="statusText">Connecting</span></div>
+      <div class="headline"><span id="headline">--</span><small>%</small></div>
+      <div id="headlineSub" class="sub">waiting for usage data</div>
+    </div>
+  </section>
+
+  <section class="limits">
+    <article class="limit">
+      <header><span class="swatch inner"></span>Session <em>5-hour</em></header>
+      <div class="pct"><span id="sessionPct">--</span><small>%</small></div>
+      <div class="meter"><div id="sessionBar"></div></div>
+      <footer><span id="sessionReset">--</span><span class="chip" id="sessionCountdown"></span></footer>
+    </article>
+    <article class="limit">
+      <header><span class="swatch outer"></span>Weekly <em>all models</em></header>
+      <div class="pct"><span id="weeklyPct">--</span><small>%</small></div>
+      <div class="meter"><div id="weeklyBar"></div></div>
+      <footer><span id="weeklyReset">--</span><span class="chip" id="weeklyCountdown"></span></footer>
+    </article>
+  </section>
+  <div id="weeklyExtra" class="extra"></div>
+
+  <section class="panel" id="activity">
+    <h2>Claude Code activity <em>this Mac · last 7 days</em></h2>
+    <div class="totals">
+      <div><label>Today</label><strong id="todayTokens">--</strong><span id="todayMsgs"></span></div>
+      <div><label>This week</label><strong id="weekTokens">--</strong><span id="weekMsgs"></span></div>
+    </div>
+    <div class="chart" id="chart" role="img" aria-label="Tokens per day for the last 7 days"></div>
+    <div class="days" id="days"></div>
+    <div class="tooltip" id="tip" hidden></div>
+    <div class="split" id="split" aria-label="Share of this week's tokens by model"></div>
+    <div class="legend" id="legend"></div>
+    <p class="note" id="activityNote"></p>
+  </section>
+
+  <footer class="bottombar">
+    <span id="updated">--</span>
+    <a href="https://claude.ai/settings/usage" target="_blank" rel="noopener">claude.ai usage ↗</a>
+  </footer>
+</div>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const POLL_MS = 60_000, LOG_MS = 120_000;
+const ALERT_LEVELS = [70, 90, 100];
+
+// limit state -> reserved status palette, always shown with an icon and a label
+const STATUS = {
+  ok:       { cls: 'good',     text: 'Normal',     icon: '✓' },
+  warning:  { cls: 'warning',  text: 'Heads up',   icon: '!' },
+  critical: { cls: 'serious',  text: 'Near limit', icon: '!' },
+  limited:  { cls: 'critical', text: 'Limited',    icon: '×' },
+  unknown:  { cls: 'unknown',  text: 'Offline',    icon: '?' },
+};
+const levelOf = p => p == null ? 'unknown' : p >= 100 ? 'limited' : p >= 90 ? 'critical' : p >= 70 ? 'warning' : 'ok';
+const cssVar = (cls, hi) => `var(--${cls}${hi ? '-hi' : ''})`;
+const SERIES = ['var(--series-1)', 'var(--series-2)', 'var(--series-3)'];
+
+let desktop = null;      // full desktop API, only inside the installed app
+let platform = 'darwin';
+let state = null;
+let shownHeadline = 0;
+
+// ---------- formatting ----------
+function fmtTokens(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return String(n);
+}
+function countdown(iso) {
+  if (!iso) return '';
+  let s = Math.max(0, Math.floor((Date.parse(iso) - Date.now()) / 1000));
+  const d = Math.floor(s / 86400); s %= 86400;
+  const h = Math.floor(s / 3600); s %= 3600;
+  const m = Math.floor(s / 60);
+  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+}
+function resetText(iso) {
+  if (!iso) return 'No reset time';
+  const d = new Date(iso), sameDay = d.toDateString() === new Date().toDateString();
+  return d.toLocaleString([], sameDay ? { hour: 'numeric', minute: '2-digit' } : { weekday: 'short', hour: 'numeric' });
+}
+const prettyModel = m => m === 'Other' ? 'Other' : m.replace(/^claude-/, '').replace(/-\d{8}$/, '')
+  .replace(/-(\d+)-(\d+)$/, ' $1.$2').replace(/-/g, ' ').replace(/^\w/, c => c.toUpperCase());
+const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// ---------- data: live limits (installed app only) ----------
+const isWin = () => platform === 'win32';
+
+async function readOAuth() {
+  let raw = null;
+  if (!isWin()) {
+    const r = await desktop.childProcess.exec('/usr/bin/security find-generic-password -s "Claude Code-credentials" -w', { timeout: 15000 }).catch(() => null);
+    if (r && r.code === 0 && r.stdout.trim()) { try { raw = JSON.parse(r.stdout.trim()); } catch {} }
+  }
+  if (!raw) {
+    for (const p of ['~/.claude/.credentials.json', '~/.config/claude/.credentials.json']) {
+      const txt = await desktop.fs.readFile(p, 'utf8').catch(() => null);
+      if (txt) { try { raw = JSON.parse(txt); break; } catch {} }
+    }
+  }
+  const o = raw && (raw.claudeAiOauth || raw);
+  return o && o.accessToken ? o : null;
+}
+
+function normWindow(w) {
+  return w && typeof w.utilization === 'number' ? { percent: Math.max(0, Math.min(100, w.utilization)), resetsAt: w.resets_at || null } : null;
+}
+
+async function fetchLimits() {
+  const oauth = await readOAuth();
+  if (!oauth) return { ok: false, error: 'No Claude Code login found on this Mac. Run `claude` in Terminal, sign in, then press Refresh.' };
+  if (oauth.expiresAt && oauth.expiresAt < Date.now()) return { ok: false, error: 'Your Claude Code login has expired. Run any `claude` command in Terminal to renew it, then press Refresh.' };
+  const curl = isWin() ? 'curl.exe' : '/usr/bin/curl';
+  // the token goes to curl on stdin (-H @-), so it never appears in the process list
+  const r = await desktop.childProcess.exec(
+    `${curl} -sS -m 15 -H @- -H "anthropic-beta: oauth-2025-04-20" -H "Accept: application/json" -H "User-Agent: usage-pulse/1.0" -w "\\n%{http_code}" https://api.anthropic.com/api/oauth/usage`,
+    { input: `Authorization: Bearer ${oauth.accessToken}\n`, timeout: 20000 }
+  ).catch(e => ({ code: -1, stdout: '', stderr: e.message }));
+  if (r.code !== 0) return { ok: false, error: `Couldn't reach Anthropic: ${(r.stderr || 'network error').trim().slice(0, 160)}` };
+  const out = r.stdout.trimEnd(), cut = out.lastIndexOf('\n');
+  const status = Number(out.slice(cut + 1)), body = out.slice(0, cut);
+  if (status === 401 || status === 403) return { ok: false, error: 'Anthropic rejected the saved login. Run `claude` in Terminal to sign in again, then press Refresh.' };
+  if (status !== 200) return { ok: false, error: `The usage service answered HTTP ${status}. Trying again in a minute.` };
+  let j; try { j = JSON.parse(body); } catch { return { ok: false, error: 'The usage service sent an answer this app could not read.' }; }
+  const session = normWindow(j.five_hour), weekly = normWindow(j.seven_day);
+  const peak = (session || weekly) ? Math.max(session?.percent ?? 0, weekly?.percent ?? 0) : null;
+  return { ok: true, plan: oauth.subscriptionType || null, session, weekly,
+    weeklyOpus: normWindow(j.seven_day_opus), weeklySonnet: normWindow(j.seven_day_sonnet), status: levelOf(peak) };
+}
+
+// ---------- data: local Claude Code logs (macOS, via the system's perl) ----------
+// Scans ~/.claude/projects/**/*.jsonl touched in the last 8 days and prints one row per local day + model.
+const PERL_SCAN = String.raw`
+use strict; use warnings; use File::Find; use Time::Local qw(timegm);
+my $home = $ENV{HOME} || (getpwuid($<))[7];
+my @roots = grep { -d $_ } ("$home/.claude/projects", "$home/.config/claude/projects");
+my @files;
+find(sub { push @files, $File::Find::name if /\.jsonl\z/ && -f $_ && -M $_ < 8 }, @roots) if @roots;
+my (%seen, %agg);
+for my $f (@files) {
+  open(my $fh, '<', $f) or next;
+  while (my $l = <$fh>) {
+    next unless index($l, '"usage"') >= 0 && index($l, '"type":"assistant"') >= 0;
+    my ($Y,$M,$D,$h,$m,$s) = $l =~ /"timestamp":"(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)/ or next;
+    my ($in) = $l =~ /"input_tokens":(\d+)/; next unless defined $in;
+    my ($out) = $l =~ /"output_tokens":(\d+)/;
+    my ($cw) = $l =~ /"cache_creation_input_tokens":(\d+)/;
+    my ($cr) = $l =~ /"cache_read_input_tokens":(\d+)/;
+    my ($model) = $l =~ /"model":"([^"]+)"/; $model //= 'unknown';
+    next if $model eq '<synthetic>';
+    my ($mid) = $l =~ /"id":"(msg_[^"]+)"/;
+    my ($rid) = $l =~ /"requestId":"([^"]+)"/;
+    my $key = ($mid // '') . ':' . ($rid // '');
+    next if $key ne ':' && $seen{$key}++;
+    my @lt = localtime(timegm($s,$m,$h,$D,$M-1,$Y));
+    my $k = sprintf("%04d-%02d-%02d\t%s", $lt[5]+1900, $lt[4]+1, $lt[3], $model);
+    my $a = $agg{$k} //= [0,0,0,0,0];
+    $a->[0] += $in; $a->[1] += $out // 0; $a->[2] += $cw // 0; $a->[3] += $cr // 0; $a->[4]++;
+  }
+  close $fh;
+}
+print join("\t", $_, @{$agg{$_}}), "\n" for sort keys %agg;
+`;
+
+async function scanLogs() {
+  if (isWin()) return { note: 'Daily token history is available on macOS only.' };
+  const r = await desktop.childProcess.exec('/usr/bin/perl -', { input: PERL_SCAN, timeout: 60000 }).catch(e => ({ code: -1, stderr: e.message }));
+  if (r.code !== 0) return { note: `Couldn't read Claude Code's logs: ${(r.stderr || '').trim().slice(0, 140)}` };
+  const rows = r.stdout.trim().split('\n').filter(Boolean).map(line => {
+    const [day, model, i, o, cw, cr, n] = line.split('\t');
+    return { day, model, total: +i + +o + +cw + +cr, n: +n };
+  });
+  return buildLocal(rows);
+}
+
+function buildLocal(rows) {
+  const now = new Date(), today = new Date(now); today.setHours(0, 0, 0, 0);
+  const monday = new Date(today); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  const days = [];
+  for (let i = 6; i >= 0; i--) { const d = new Date(today); d.setDate(d.getDate() - i); days.push({ key: dayKey(d), start: d.getTime(), total: 0, messages: 0 }); }
+  const byKey = Object.fromEntries(days.map(d => [d.key, d]));
+  const t = { total: 0, messages: 0 }, w = { total: 0, messages: 0, byModel: {} };
+  const todayKey = dayKey(today), mondayKey = dayKey(monday);
+  for (const r of rows) {
+    if (byKey[r.day]) { byKey[r.day].total += r.total; byKey[r.day].messages += r.n; }
+    if (r.day === todayKey) { t.total += r.total; t.messages += r.n; }
+    if (r.day >= mondayKey) { w.total += r.total; w.messages += r.n; w.byModel[r.model] = (w.byModel[r.model] || 0) + r.total; }
+  }
+  return { today: t, week: w, days };
+}
+
+// ---------- sample data (shown until the app is installed) ----------
+function sampleState() {
+  const now = Date.now(), amt = [0.4, 1.2, 0.7, 2.1, 1.6, 0.9, 1.3], rows = [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  amt.forEach((a, i) => {
+    const d = new Date(today); d.setDate(d.getDate() - (6 - i));
+    rows.push({ day: dayKey(d), model: 'claude-opus-5-5', total: Math.round(a * 2.1e6), n: Math.round(a * 14) });
+    rows.push({ day: dayKey(d), model: 'claude-sonnet-5-5', total: Math.round(a * 0.9e6), n: Math.round(a * 6) });
+    rows.push({ day: dayKey(d), model: 'claude-haiku-5-5', total: Math.round(a * 0.15e6), n: Math.round(a * 3) });
+  });
+  return {
+    sample: true,
+    limits: { ok: true, plan: 'max', status: 'warning',
+      session: { percent: 46, resetsAt: new Date(now + 2.3 * 3600e3).toISOString() },
+      weekly: { percent: 78, resetsAt: new Date(now + 3.4 * 86400e3).toISOString() },
+      weeklyOpus: { percent: 64, resetsAt: null }, weeklySonnet: null },
+    local: buildLocal(rows),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+// ---------- rendering ----------
+function buildTicks() {
+  for (const p of [70, 90]) {
+    const a = (p / 100) * 2 * Math.PI - Math.PI / 2;
+    const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    l.setAttribute('x1', 130 + 121 * Math.cos(a)); l.setAttribute('y1', 130 + 121 * Math.sin(a));
+    l.setAttribute('x2', 130 + 128 * Math.cos(a)); l.setAttribute('y2', 130 + 128 * Math.sin(a));
+    l.setAttribute('class', 'tick');
+    $('ticks').appendChild(l);
+  }
+}
+function setArc(id, gradId, w) {
+  const arc = $(id), c = 2 * Math.PI * Number(arc.getAttribute('r'));
+  arc.style.strokeDasharray = `${c}`;
+  arc.style.strokeDashoffset = `${c * (1 - (w ? Math.min(1, w.percent / 100) : 0))}`;
+  arc.style.opacity = w ? 1 : 0;
+  const cls = STATUS[levelOf(w?.percent)].cls;
+  $(gradId).style.setProperty('--c0', cssVar(cls));
+  $(gradId).style.setProperty('--c1', cssVar(cls, true));
+}
+function animateNumber(el, to) {
+  const from = shownHeadline, start = performance.now();
+  shownHeadline = to;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = to; return; }
+  const step = t => {
+    const k = Math.min(1, (t - start) / 900), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = Math.round(from + (to - from) * e);
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+function setCard(prefix, w) {
+  const bar = $(prefix + 'Bar');
+  if (!w) {
+    $(prefix + 'Pct').textContent = '--'; bar.style.width = '0';
+    $(prefix + 'Reset').textContent = 'No data'; $(prefix + 'Countdown').textContent = '';
+    return;
+  }
+  const cls = STATUS[levelOf(w.percent)].cls;
+  $(prefix + 'Pct').textContent = Math.round(w.percent);
+  bar.style.width = Math.min(100, w.percent) + '%';
+  bar.style.background = `linear-gradient(90deg, ${cssVar(cls)}, ${cssVar(cls, true)})`;
+  $(prefix + 'Reset').textContent = resetText(w.resetsAt);
+  const cd = countdown(w.resetsAt);
+  $(prefix + 'Countdown').textContent = cd ? '↻ ' + cd : '';
+}
+function renderChart(days) {
+  const max = Math.max(1, ...days.map(d => d.total));
+  const peak = days.reduce((a, d, i) => (d.total > days[a].total ? i : a), 0);
+  const last = days.length - 1;
+  $('chart').replaceChildren(...days.map((d, i) => {
+    const col = document.createElement('div');
+    col.className = 'col' + (i === last ? ' today' : '');
+    const bar = document.createElement('div');
+    bar.className = 'bar'; bar.style.height = `${(d.total / max) * 100}%`;
+    col.appendChild(bar);
+    if ((i === last || i === peak) && d.total > 0) { // selective direct labels: today and the peak day
+      const v = document.createElement('span');
+      v.className = 'val'; v.textContent = fmtTokens(d.total);
+      v.style.bottom = `calc(${(d.total / max) * 100}% + 3px)`;
+      col.appendChild(v);
+    }
+    col.addEventListener('mouseenter', () => showTip(col, d));
+    col.addEventListener('mouseleave', () => { $('tip').hidden = true; });
+    return col;
+  }));
+  $('days').replaceChildren(...days.map((d, i) => {
+    const s = document.createElement('span');
+    s.textContent = i === last ? 'Today' : new Date(d.start).toLocaleDateString([], { weekday: 'short' });
+    if (i === last) s.className = 'today';
+    return s;
+  }));
+}
+function showTip(col, d) {
+  const tip = $('tip'), pr = $('activity').getBoundingClientRect(), cr = col.getBoundingClientRect();
+  const br = col.querySelector('.bar').getBoundingClientRect();
+  const b = document.createElement('b'); b.textContent = `${fmtTokens(d.total)} tokens`;
+  const s = document.createElement('span');
+  s.textContent = `${new Date(d.start).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })} · ${d.messages} responses`;
+  tip.replaceChildren(b, s); tip.hidden = false;
+  const half = tip.offsetWidth / 2;
+  tip.style.left = Math.min(Math.max(cr.left - pr.left + cr.width / 2, half + 4), pr.width - half - 4) + 'px';
+  tip.style.top = (Math.min(br.top, cr.bottom - 20) - pr.top - 8) + 'px';
+}
+function renderSplit(byModel) {
+  let rows = Object.entries(byModel).sort((a, b) => b[1] - a[1]);
+  if (rows.length > 3) rows = [...rows.slice(0, 2), ['Other', rows.slice(2).reduce((s, [, n]) => s + n, 0)]];
+  const total = rows.reduce((s, [, n]) => s + n, 0) || 1;
+  const color = (m, i) => (m === 'Other' ? 'var(--series-other)' : SERIES[i]);
+  $('split').replaceChildren(...rows.map(([m, n], i) => {
+    const seg = document.createElement('div');
+    seg.style.flexGrow = String(n / total); seg.style.background = color(m, i);
+    seg.title = `${prettyModel(m)}: ${fmtTokens(n)}`;
+    return seg;
+  }));
+  $('legend').replaceChildren(...rows.map(([m, n], i) => {
+    const s = document.createElement('span'), sw = document.createElement('i'), name = document.createElement('span'), v = document.createElement('b');
+    sw.style.background = color(m, i); name.textContent = prettyModel(m); v.textContent = `${Math.round((n / total) * 100)}%`;
+    s.append(sw, name, v); return s;
+  }));
+}
+
+function render() {
+  if (!state) return;
+  const { limits, local } = state, ok = !!limits?.ok;
+  if (!state.sample) {
+    $('banner').hidden = ok;
+    $('banner').classList.toggle('error', !ok);
+    if (!ok) { $('bannerText').textContent = limits?.error || 'Loading…'; $('bannerBtn').hidden = true; }
+  }
+  const st = STATUS[ok ? limits.status : 'unknown'];
+  $('statusChip').className = 'status ' + st.cls;
+  $('statusText').textContent = st.text;
+  $('statusIcon').textContent = st.icon;
+  document.documentElement.style.setProperty('--status-glow', st.cls === 'good' ? '#3b5bff' : cssVar(st.cls));
+  $('plan').textContent = limits?.plan ? limits.plan[0].toUpperCase() + limits.plan.slice(1) : '';
+
+  const session = ok ? limits.session : null, weekly = ok ? limits.weekly : null;
+  setArc('arcSession', 'gSession', session); setArc('arcWeekly', 'gWeekly', weekly);
+  setCard('session', session); setCard('weekly', weekly);
+  if (session || weekly) {
+    animateNumber($('headline'), Math.round(Math.max(session?.percent ?? 0, weekly?.percent ?? 0)));
+    $('headlineSub').textContent = (weekly?.percent ?? 0) >= (session?.percent ?? 0) ? 'weekly · tightest limit' : 'session · tightest limit';
+  } else { $('headline').textContent = '--'; $('headlineSub').textContent = 'waiting for usage data'; }
+
+  const extra = [];
+  if (ok && limits.weeklyOpus) extra.push(['Opus weekly', limits.weeklyOpus]);
+  if (ok && limits.weeklySonnet) extra.push(['Sonnet weekly', limits.weeklySonnet]);
+  $('weeklyExtra').replaceChildren(...extra.map(([k, w]) => {
+    const s = document.createElement('span'), b = document.createElement('b');
+    s.textContent = k + ' '; b.textContent = Math.round(w.percent) + '%'; s.appendChild(b); return s;
+  }));
+
+  $('activityNote').textContent = local?.note || '';
+  if (local?.days) {
+    $('todayTokens').textContent = fmtTokens(local.today.total);
+    $('todayMsgs').textContent = `${local.today.messages} responses`;
+    $('weekTokens').textContent = fmtTokens(local.week.total);
+    $('weekMsgs').textContent = `${local.week.messages} responses · since Mon`;
+    renderChart(local.days); renderSplit(local.week.byModel);
+  }
+  document.body.classList.toggle('stale', !ok || state.sample);
+  $('liveText').textContent = state.sample ? 'SAMPLE' : 'LIVE';
+  $('updated').textContent = state.sample ? 'Sample data'
+    : 'Updated ' + new Date(state.updatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+}
+
+// ---------- desktop extras: menu bar item, Dock icon & badge, notifications ----------
+function drawRing(size, frac, { color, track, bg }) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d'), r = size / 2;
+  if (bg) {
+    const grad = g.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, '#1b1f2c'); grad.addColorStop(1, '#07080c');
+    g.fillStyle = grad; g.beginPath(); g.roundRect(size * .1, size * .1, size * .8, size * .8, size * .18); g.fill();
+  }
+  const rr = bg ? size * .27 : r - size * .12, lw = bg ? size * .075 : size * .16;
+  g.lineWidth = lw; g.lineCap = 'round';
+  g.strokeStyle = track; g.beginPath(); g.arc(r, r, rr, 0, Math.PI * 2); g.stroke();
+  if (frac > 0) { g.strokeStyle = color; g.beginPath(); g.arc(r, r, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, frac)); g.stroke(); }
+  if (bg) { // inner session ring
+    g.lineWidth = lw * .8; g.strokeStyle = 'rgba(255,255,255,.08)'; g.beginPath(); g.arc(r, r, rr * .68, 0, Math.PI * 2); g.stroke();
+    g.strokeStyle = '#5cf07a'; g.beginPath(); g.arc(r, r, rr * .68, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * .46); g.stroke();
+  }
+  return c.toDataURL('image/png');
+}
+
+async function updateTray() {
+  if (!desktop || state?.sample) return;
+  const l = state.limits, ok = !!l?.ok;
+  const s = ok && l.session ? Math.round(l.session.percent) : null, w = ok && l.weekly ? Math.round(l.weekly.percent) : null;
+  const peak = ok ? Math.max(s ?? 0, w ?? 0) : null;
+  const title = ok ? `${s ?? '–'}% · ${w ?? '–'}%` : '–';
+  await desktop.tray.set({
+    icon: drawRing(36, (peak ?? 0) / 100, { color: '#000', track: 'rgba(0,0,0,.28)' }),
+    title,
+    toolTip: ok ? `Session ${s ?? '–'}% · Weekly ${w ?? '–'}% · ${STATUS[l.status].text}` : 'Usage unavailable',
+    menu: [
+      ...(ok ? [
+        { label: `Session (5h): ${s ?? '–'}%   ${l.session ? '↻ ' + countdown(l.session.resetsAt) : ''}`, enabled: false },
+        { label: `Weekly: ${w ?? '–'}%   ${l.weekly ? '↻ ' + countdown(l.weekly.resetsAt) : ''}`, enabled: false },
+      ] : [{ label: 'Usage unavailable', enabled: false }]),
+      { type: 'separator' },
+      { label: 'Show Usage Pulse', click: () => desktop.window.show().catch(() => {}) },
+      { label: 'Refresh now', click: () => refresh(true) },
+      { label: 'Open claude.ai usage', href: 'https://claude.ai/settings/usage' },
+    ],
+  }).catch(() => {}); // menu bar permission refused: the window still works
+  desktop.app.dock.setBadge(ok && peak != null ? `${peak}%` : '').catch(() => {});
+}
+
+function maybeNotify(key, label, w) {
+  if (!desktop || !w) return;
+  const hit = ALERT_LEVELS.filter(x => w.percent >= x).pop() || 0;
+  const store = `usage-pulse:${key}:${w.resetsAt || ''}`; // one alert per level per limit window
+  let prev = 0; try { prev = Number(localStorage.getItem(store)) || 0; } catch {}
+  if (hit <= prev) return;
+  try { localStorage.setItem(store, String(hit)); } catch {}
+  const when = w.resetsAt ? ` It resets ${resetText(w.resetsAt)}.` : '';
+  desktop.notification.show({ body: hit >= 100 ? `You've hit your ${label} limit.${when}` : `Claude ${label} usage is at ${Math.round(w.percent)}%.${when}` }).catch(() => {});
+}
+
+// ---------- refresh loop ----------
+let lastLogScan = 0, busy = false;
+async function refresh(force = false) {
+  if (!desktop?.childProcess || busy) return;
+  busy = true; $('refresh').classList.add('spin');
+  try {
+    const wantLogs = force || !state?.local || Date.now() - lastLogScan > LOG_MS;
+    const [limits, local] = await Promise.all([
+      fetchLimits().catch(e => ({ ok: false, error: e.message })),
+      wantLogs ? scanLogs().catch(e => ({ note: e.message })) : Promise.resolve(state.local),
+    ]);
+    if (wantLogs) lastLogScan = Date.now();
+    state = { limits, local, updatedAt: new Date().toISOString() };
+    render(); updateTray();
+    if (limits.ok) { maybeNotify('session', 'session (5-hour)', limits.session); maybeNotify('weekly', 'weekly', limits.weekly); }
+  } finally { busy = false; setTimeout(() => $('refresh').classList.remove('spin'), 400); }
+}
+
+function showBanner(text, btnLabel, onClick) {
+  $('banner').hidden = false; $('banner').classList.remove('error');
+  $('bannerText').textContent = text;
+  $('bannerBtn').hidden = !btnLabel;
+  if (btnLabel) { $('bannerBtn').textContent = btnLabel; $('bannerBtn').onclick = onClick; }
+}
+
+async function startApp() {
+  document.body.classList.add('app');
+  platform = await desktop.os.platform().catch(() => 'darwin');
+  if (platform === 'darwin') document.body.classList.add('mac');
+
+  desktop.app.dock.setIcon(drawRing(256, .78, { color: '#ffd166', track: 'rgba(255,255,255,.1)', bg: true })).catch(() => {});
+  desktop.window.setOptions({ titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 14, y: 16 }, dragHeight: 46,
+    vibrancy: 'under-window', visualEffectState: 'active', width: 380, height: 800, minWidth: 340, minHeight: 560 }).catch(() => {});
+
+  const perm = await desktop.permissions.state('full-access').catch(() => 'unavailable');
+  if (perm === 'granted') return begin();
+  state = sampleState(); render();
+  if (perm === 'denied') {
+    showBanner('Usage Pulse needs access to this Mac to read your Claude Code login and logs. Turn it on in the app\'s permissions.', 'Open permissions',
+      () => desktop.permissions.manage().then(() => location.reload()).catch(() => {}));
+  } else if (perm === 'prompt') {
+    showBanner('Allow Usage Pulse to read your Claude Code login and logs on this Mac. It only sends your login to Anthropic.', 'Allow access',
+      async () => {
+        const res = await desktop.permissions.request(['full-access', 'notifications', 'menu-bar']).catch(() => null);
+        if (res?.['full-access'] === 'granted') begin();
+      });
+  } else {
+    showBanner('This Mac app can\'t get file access here. It needs to be installed from an artifact in your own organization.');
+  }
+}
+function begin() {
+  $('banner').hidden = true;
+  refresh(true);
+  setInterval(() => refresh(false), POLL_MS);
+}
+
+async function main() {
+  buildTicks();
+  state = sampleState(); render(); // complete at rest: sample data until real data arrives
+  showBanner('This is sample data. Install Usage Pulse as a Mac app from the Claude desktop app to see your live usage.');
+  const api = await (window.claude?.use?.('desktop') ?? Promise.resolve(null)).catch(() => null);
+  if (api?.fs) { desktop = api; return startApp(); }
+  const inst = await api?.install?.state().catch(() => 'unavailable');
+  if (inst === 'available') {
+    showBanner('This is sample data. Install Usage Pulse as a Mac app to see your live usage in its own window and menu bar.', 'Install as app',
+      () => api.install.request().catch(() => {}));
+  } else if (inst === 'installed') {
+    showBanner('Usage Pulse is installed on this computer. Open it from your Applications or Dock to see your live usage.');
+  } else {
+    showBanner('This is sample data. Open this page in the Claude desktop app on your Mac and choose Install as app to see your live usage.');
+  }
+}
+
+$('refresh').addEventListener('click', () => desktop?.childProcess ? refresh(true) : render());
+setInterval(() => { if (state?.limits?.ok) { setCard('session', state.limits.session); setCard('weekly', state.limits.weekly); } }, 30_000);
+main();
+</script>
